@@ -5,19 +5,19 @@ import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export async function main() {
+// データベース接続を行う補助関数
+async function connectToDatabase() {
     try {
-        // データベースと接続
         await prisma.$connect();
     } catch (err) {
-        return Error("DB接続失敗" + err);
+        throw new Error("DB接続失敗: " + err);
     }
 }
 
 // ポスト全記事取得　API
 export async function GET() {
     try {
-        await main();
+        await connectToDatabase();  // DB接続
 
         // posts変数に取得したすべての記事を格納
         const posts = await prisma.post.findMany({
@@ -31,7 +31,6 @@ export async function GET() {
     } catch (err) {
         return NextResponse.json({ message: "error", err }, { status: 500 });
     } finally {
-        // 接続を止める
         prisma.$disconnect();
     }
 }
@@ -39,19 +38,19 @@ export async function GET() {
 // 投稿用　API
 export const POST = async (req: Request) => {
     try {
-        // 値の受け取り
-        const { name, content } = await req.json();
+        const { name, content } = await req.json();  // リクエストから値を受け取る
 
-        await main();
+        await connectToDatabase();  // DB接続
 
-        const post = await prisma.post.create({ data: { name, content } });
+        // 新しい投稿を作成
+        const post = await prisma.post.create({
+            data: { name, content }
+        });
 
-        // 取り出したメッセージを返す
         return NextResponse.json({ message: "success", post }, { status: 201 });
     } catch (err) {
         return NextResponse.json({ message: "error", err }, { status: 500 });
     } finally {
-        // 接続を止める
         prisma.$disconnect();
     }
 };
