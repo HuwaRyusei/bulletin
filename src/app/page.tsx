@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import React, { useRef, useState, useEffect } from "react";
 import { PostType } from "@/types";
 
@@ -25,7 +24,6 @@ const postBlog = async (name: string | undefined, content: string | undefined) =
 
 export default function Home() {
   const [posts, setPosts] = useState<PostType[]>([]);
-  const router = useRouter();
   const nameRef = useRef<HTMLInputElement | null>(null);
   const contentRef = useRef<HTMLTextAreaElement | null>(null);
 
