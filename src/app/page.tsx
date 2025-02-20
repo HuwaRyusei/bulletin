@@ -1,101 +1,114 @@
-import Image from "next/image";
+"use client";
+
+import { useRouter } from "next/navigation";
+import React, { useRef, useState, useEffect } from "react";
+import { PostType } from "@/types";
+
+async function fetchAllBlogs() {
+  const res = await fetch(`http://localhost:3000/api`, {
+    cache: "no-store",
+  });
+  const data = await res.json();
+  return data.posts;
+}
+
+const postBlog = async (name: string | undefined, content: string | undefined) => {
+  const res = await fetch(`http://localhost:3000/api`, {
+    method: "POST",
+    body: JSON.stringify({ name, content }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return res.json();
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [posts, setPosts] = useState<PostType[]>([]);
+  const router = useRouter();
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const contentRef = useRef<HTMLTextAreaElement | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    fetchAllBlogs().then((data) => setPosts(data));
+  }, []);
+
+  const hundleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // ブログの投稿
+    postBlog(nameRef.current?.value, contentRef.current?.value);
+
+    // リフレッシュ
+    window.location.reload();
+  };
+
+  return (
+    <div className="bg-gray-100 font-sans text-gray-900 min-h-screen flex items-center justify-center">
+      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-lg">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">掲示板</h1>
+
+        {/* 投稿フォーム */}
+        <form onSubmit={hundleSubmit} className="space-y-6">
+          {/* 名前入力と送信ボタン */}
+          <div className="flex items-center space-x-4">
+            <div className="flex flex-col w-full">
+              <input
+                ref={nameRef}
+                type="text"
+                id="name"
+                name="name"
+                required
+                placeholder="投稿名"
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-300 w-full"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-3 py-5 text-white font-semibold rounded-lg transition duration-300"
+            >
+              {/* 送信アイコン */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                height="24px"
+                viewBox="0 -960 960 960"
+                width="24px"
+                fill="#5f6368"
+              >
+                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* 文章入力 */}
+          <div className="flex flex-col">
+            <textarea
+              ref={contentRef}
+              id="message"
+              name="message"
+              rows={4}
+              required
+              placeholder="投稿内容"
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-300 w-full"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+        </form>
+
+        {/* 投稿リスト */}
+        <div className="mt-8 space-y-4">
+          {posts.map((post: PostType) => (
+            <div key={post.id} className="bg-gray-50 p-4 rounded-lg shadow-sm">
+              <div className="flex items-center mb-2">
+                <span className="font-bold text-gray-800">{post.name}</span>
+                <span className="text-sm text-gray-500 ml-2">
+                  {new Date(post.createdAt).toLocaleDateString("ja-JP")}
+                </span>
+              </div>
+              <p className="text-gray-700">{post.content}</p>
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
