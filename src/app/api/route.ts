@@ -8,13 +8,13 @@ export async function main(){
         // データベースと接続
         await prisma.$connect();
     }catch(err){
-        return Error("DB接続失敗");
+        return Error("DB接続失敗" + err);
     }
 }
 
 
 // ポスト全記事取得　API
-export const GET = async (req: Request, res: NextResponse) => {
+export const GET = async () => {
     try{
         await main();
 
@@ -36,7 +36,7 @@ export const GET = async (req: Request, res: NextResponse) => {
 };
 
 // 投稿用　API
-export const POST = async (req: Request, res: NextResponse) => {
+export const POST = async (req: Request) => {
     try{
         // 値の受け取り
         const {name,content} = await req.json();
